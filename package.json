@@ -1,0 +1,17 @@
+{
+  "name": "stockmaster",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StockMaster",
+  "devDependencies": {
+    "shadow-cljs": "^2.10.14"
+  },
+  "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "highlight.js": "9.18.1",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-highlight.js": "1.0.7"
+  }
+}
