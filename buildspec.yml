@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12.x
+
+  build:
+    commands:
+      npx shadow-cljs release stockmaster
+
+artifacts:
+  files:
+    - 'public/**/*'

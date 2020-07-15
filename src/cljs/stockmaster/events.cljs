@@ -1,7 +1,6 @@
 (ns stockmaster.events
   (:require [re-frame.core :as reframe]
             [day8.re-frame.http-fx]
-            [day8.re-frame.tracing :refer-macros [fn-traced]]
             [ajax.core :as ajax]))
 
 

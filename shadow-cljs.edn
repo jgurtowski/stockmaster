@@ -16,7 +16,7 @@
          :middleware []}
  
  :builds
- {:app {:target :browser
+ {:stockmaster {:target :browser
         :output-dir "public/js"
         :asset-path "/js"
         :devtools {:http-port 8080
