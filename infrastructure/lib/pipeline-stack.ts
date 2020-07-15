@@ -3,7 +3,7 @@ import { User, PolicyStatement, Effect, ManagedPolicy } from "@aws-cdk/aws-iam";
 import { Pipeline, Artifact } from "@aws-cdk/aws-codepipeline";
 import { Repository } from "@aws-cdk/aws-codecommit";
 import { PipelineProject } from "@aws-cdk/aws-codebuild";
-import { Bucket, BlockPublicAccess } from "@aws-cdk/aws-s3";
+import { IBucket, Bucket, BlockPublicAccess } from "@aws-cdk/aws-s3";
 import {
   CodeBuildAction,
   CodeCommitSourceAction,
@@ -11,6 +11,8 @@ import {
 } from "@aws-cdk/aws-codepipeline-actions";
 
 export class PipelineStack extends cdk.Stack {
+  deploymentBucket: IBucket;
+
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -30,6 +32,18 @@ export class PipelineStack extends cdk.Stack {
         }),
       ],
       users: [jamesUser],
+    });
+
+    this.deploymentBucket = new Bucket(this, "StockMasterBucket", {
+      bucketName: "pulsar-equity-stock-master",
+      websiteIndexDocument: "index.html",
+      publicReadAccess: true,
+      blockPublicAccess: new BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      }),
     });
 
     const pipeline = new Pipeline(this, "StockMasterBuildPipeline");
@@ -66,24 +80,12 @@ export class PipelineStack extends cdk.Stack {
       ],
     });
 
-    const deploymentBucket = new Bucket(this, "StockMasterBucket", {
-      bucketName: "pulsar-equity-stock-master",
-      websiteIndexDocument: "index.html",
-      publicReadAccess: true,
-      blockPublicAccess: new BlockPublicAccess({
-        blockPublicAcls: false,
-        blockPublicPolicy: false,
-        ignorePublicAcls: false,
-        restrictPublicBuckets: false
-      })
-    });
-
     pipeline.addStage({
       stageName: "Deploy",
       actions: [
         new S3DeployAction({
           actionName: "DeploymentAction",
-          bucket: deploymentBucket,
+          bucket: this.deploymentBucket,
           input: buildArtifact,
         }),
       ],
