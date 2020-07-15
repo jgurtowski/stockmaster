@@ -4,10 +4,12 @@ phases:
   install:
     runtime-versions:
       nodejs: 12.x
+    commands:
+      - npm i
 
   build:
     commands:
-      npx shadow-cljs release stockmaster
+      - npx shadow-cljs release stockmaster
 
 artifacts:
   files:
