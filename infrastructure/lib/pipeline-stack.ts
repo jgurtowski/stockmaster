@@ -35,7 +35,7 @@ export class PipelineStack extends cdk.Stack {
     });
 
     this.deploymentBucket = new Bucket(this, "StockMasterBucket", {
-      bucketName: "pulsar-equity-stock-master",
+      bucketName: "pulsarequity.com",
       websiteIndexDocument: "index.html",
       publicReadAccess: true,
       blockPublicAccess: new BlockPublicAccess({
