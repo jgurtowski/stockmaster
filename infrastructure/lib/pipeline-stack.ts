@@ -3,7 +3,7 @@ import { User, PolicyStatement, Effect, ManagedPolicy } from "@aws-cdk/aws-iam";
 import { Pipeline, Artifact } from "@aws-cdk/aws-codepipeline";
 import { Repository } from "@aws-cdk/aws-codecommit";
 import { PipelineProject } from "@aws-cdk/aws-codebuild";
-import { Bucket } from "@aws-cdk/aws-s3";
+import { Bucket, BlockPublicAccess } from "@aws-cdk/aws-s3";
 import {
   CodeBuildAction,
   CodeCommitSourceAction,
@@ -69,6 +69,13 @@ export class PipelineStack extends cdk.Stack {
     const deploymentBucket = new Bucket(this, "StockMasterBucket", {
       bucketName: "pulsar-equity-stock-master",
       websiteIndexDocument: "index.html",
+      publicReadAccess: true,
+      blockPublicAccess: new BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false
+      })
     });
 
     pipeline.addStage({
