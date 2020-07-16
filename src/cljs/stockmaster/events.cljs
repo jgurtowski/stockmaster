@@ -45,7 +45,9 @@
 (reframe/reg-event-db
  ::success-http-option-expirations
  (fn [db [_ result]]
-   (assoc db :option-expirations (get-in result [:expirations :date]))))
+   (let [expiration-dates-list (get-in result [:expirations :date])]
+     (assoc db :option-expirations
+            (apply merge (map #(hash-map % {}) expiration-dates-list))))))
 
 (reframe/reg-event-db
  ::failure-http-option-expirations
@@ -54,45 +56,33 @@
 
 
 (reframe/reg-event-fx
- :request-option-symbols
+ :request-option-strikes
  (fn [_ event]
-   (let [requested-symbol (second event)]
+   (let [symbol (second event)
+         expiration (get event 2)]
      {:http-xhrio {:method :get
-                   :uri "https://sandbox.tradier.com/v1/markets/options/lookup"
+                   :uri "https://sandbox.tradier.com/v1/markets/options/strikes"
                    :headers {:Accept "application/json"
                              :Authorization "Bearer fUMaw0yjP8h253ko8uYS6rxwFoli"}
-                   :params {:underlying (second event)}
+                   :params {:symbol symbol
+                            :expiration expiration}
                    :format (ajax/json-request-format)
                    :response-format (ajax/json-response-format {:keywords? true})
-                   :on-success [::success-http-option-symbols
-                                :requested-symbol requested-symbol]
-                   :on-failure [::failure-http-option-symbols]}})))
-
-
-;TODO finish parsing the option symbols into something
-;that can make a table
-;(defn parse-option-symbol
-;  [symbol] 
-;  (let [reversed-symbol (reverse symbol)]
-;    (subs reversed-symbol 0 8) ;strike
-;    (subs reversed-symbol 8 9) ;p/c
-;    (subs reversed-symbol 9 15) ;date
-;    (subs reversed-symbol 15) ;symbol)
-
-
-
-;(reframe/reg-event-db
-; ::success-http-option-symbols
-; (fn [db [_ result]]
-;   (let [requested-symbol (:requested-symbol result)
-;         found-symbol (filter #(== (:root-symbol %) requested-symbol) (:symbols result))
-;         option-symbols (:options found-symbol)]
-;
-;     (assoc db :option-symbols (get-in result [:expirations :date]))))
+                   :on-success [::success-http-option-strikes expiration]
+                   :on-failure [::failure-http-option-strikes]}})))
 
 (reframe/reg-event-db
- ::failure-http-option-symbols
+ ::success-http-option-strikes
+ (fn [db [_ expiration result]]
+   (let [strikes (get-in result [:expirations :date])]
+     (assoc-in db [:option-expirations expiration :strikes] (get-in result [:strikes :strike])))))
+
+(reframe/reg-event-db
+ ::failure-http-option-strikes
  (fn [db [_ request-type response]]
    (assoc db :request-fail true)))
+
+
+;probably want to just get the chain and then organize by strike, no need to get the strikes separately
 
 
