@@ -1,6 +1,8 @@
 (ns stockmaster.optiontable
   (:require [reagent.core :as reagent]
             [re-frame.core :as reframe]
+            [goog.string :as gstring]
+            [goog.string.format]
             ["@material-ui/core/Table" :default Table]
             ["@material-ui/core/TableContainer" :default TableContainer]
             ["@material-ui/core/TableHead" :default TableHead]
@@ -14,40 +16,41 @@
             ["@material-ui/icons/KeyboardArrowDown" :default KeyboardArrowDown]))
 
 
-(defn option-table-row [strike]
+(defn option-table-row [call-symbol put-symbol]
   [:<>
    [:> TableRow
-    [:> TableCell 0]
-    [:> TableCell 0]
-    [:> TableCell 0]
-    [:> TableCell strike]
-    [:> TableCell 0]
-    [:> TableCell 0]
-    [:> TableCell 0]]])
+    [:> TableCell {:align "right"} (gstring/format "%.2f" @(reframe/subscribe [:symbol-attr :ask call-symbol]))]
+    [:> TableCell {:align "right"} (gstring/format "%.2f" @(reframe/subscribe [:symbol-attr :bid call-symbol]))]
+    [:> TableCell {:align "right"} (gstring/format "%.2f" @(reframe/subscribe [:option-mark call-symbol]))]
+    [:> TableCell {:align "right"} (gstring/format "%.2f" @(reframe/subscribe [:symbol-attr :strike call-symbol]))]
+    [:> TableCell {:align "right"} (gstring/format "%.2f" @(reframe/subscribe [:option-mark put-symbol]))]
+    [:> TableCell {:align "right"} (gstring/format "%.2f" @(reframe/subscribe [:symbol-attr :bid put-symbol]))]
+    [:> TableCell {:align "right"} (gstring/format "%.2f"@(reframe/subscribe [:symbol-attr :ask put-symbol]))]]])
 
 (defn option-table [expiration]
-  (let [strikes @(reframe/subscribe [:option-expiration-strikes expiration])]
+  (let [strike-containers @(reframe/subscribe [:option-expiration-strikes expiration])]
     [:> TableContainer {:component Paper}
      [:> Table {:size "small"}
       [:> TableHead
        [:> TableRow
-        [:> TableCell "Ask"]
-        [:> TableCell "Bid"]
-        [:> TableCell "Mark"]
-        [:> TableCell "Strike"]
-        [:> TableCell "Mark"]
-        [:> TableCell "Bid"]
-        [:> TableCell "Ask"]]]
+        [:> TableCell {:align "right"} "Ask"]
+        [:> TableCell {:align "right"} "Bid"]
+        [:> TableCell {:align "right"} "Mark"]
+        [:> TableCell {:align "right"} "Strike"]
+        [:> TableCell {:align "right"} "Mark"]
+        [:> TableCell {:align "right"} "Bid"]
+        [:> TableCell {:align "right"} "Ask"]]]
       [:> TableBody
-       (for [strike strikes]
-         ^{:key strike} [option-table-row strike])]]]))
+       (for [strike (keys strike-containers)]
+         (let [{call-symbol :call-symbol put-symbol :put-symbol} (get strike-containers strike)]
+           ^{:key strike} [option-table-row call-symbol put-symbol]))]]]))
 
 (defn option-list-entry [option-expiration]
   (let [component-state (reagent/atom {:isopen false})
         option-list-click (fn []
                             (swap! component-state update-in [:isopen] not)
                             (if (:isopen @component-state)
-                              (reframe/dispatch [:request-option-strikes "SPY" option-expiration])))]
+                              (reframe/dispatch [:request-option-chains "SPY" option-expiration])))]
     (fn []
       [:<>
        [:> TableRow

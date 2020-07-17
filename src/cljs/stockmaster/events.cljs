@@ -85,4 +85,40 @@
 
 ;probably want to just get the chain and then organize by strike, no need to get the strikes separately
 
+(reframe/reg-event-fx
+ :request-option-chains
+ (fn [_ event]
+   (let [symbol (second event)
+         expiration (get event 2)]
+     {:http-xhrio {:method :get
+                   :uri "https://sandbox.tradier.com/v1/markets/options/chains"
+                   :headers {:Accept "application/json"
+                             :Authorization "Bearer fUMaw0yjP8h253ko8uYS6rxwFoli"}
+                   :params {:symbol symbol
+                            :expiration expiration}
+                   :format (ajax/json-request-format)
+                   :response-format (ajax/json-response-format {:keywords? true})
+                   :on-success [::success-http-option-chains expiration]
+                   :on-failure [::failure-http-option-chains]}})))
+
+(defn extract-symbol-from-chain
+  [option]
+  (if (= (:option_type option) "put")
+    (hash-map :put-symbol (:symbol option))
+    (hash-map :call-symbol (:symbol option))))
+
+(reframe/reg-event-db
+ ::success-http-option-chains
+ (fn [db [_ expiration result]]
+   (let [options (get-in result [:options :option])
+         symbol-map (apply merge (map #(hash-map (:symbol %) %) options))
+         db-with-symbols (assoc db :symbols symbol-map)
+         strikes (apply merge-with into (map #(sorted-map (:strike %) (extract-symbol-from-chain %)) options))]
+     (assoc-in db-with-symbols [:option-expirations expiration :strikes] strikes))))
+
+(reframe/reg-event-db
+ ::failure-http-option-chains
+ (fn [db [_ request-type response]]
+   (assoc db :request-fail true)))
+
 
