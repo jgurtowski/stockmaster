@@ -1,12 +1,13 @@
 (ns stockmaster.events
   (:require [re-frame.core :as reframe]
             [day8.re-frame.http-fx]
+            [day8.re-frame.tracing :refer-macros [fn-traced]]
             [ajax.core :as ajax]))
 
 
 (reframe/reg-event-fx
  :request-quote
- (fn [_ symbols]
+ (fn-traced [_ symbols]
    {:http-xhrio {:method :get
                  :uri "https://sandbox.tradier.com/v1/markets/quotes"
                  :headers {:Accept "application/json"
@@ -20,18 +21,18 @@
 
 (reframe/reg-event-db
  :success-http-quote
- (fn [db [_ result]]
+ (fn-traced [db [_ result]]
    (assoc db :quotes (get-in result [:quote :quotes]))))
 
 (reframe/reg-event-db
  :failure-http-quote
- (fn [db [_ request-type response]]
+ (fn-traced [db [_ request-type response]]
    (assoc db :request-fail true)))
 
 
 (reframe/reg-event-fx
  :request-option-expirations
- (fn [_ event]
+ (fn-traced [_ event]
    {:http-xhrio {:method :get
                  :uri "https://sandbox.tradier.com/v1/markets/options/expirations"
                  :headers {:Accept "application/json"
@@ -44,20 +45,20 @@
 
 (reframe/reg-event-db
  ::success-http-option-expirations
- (fn [db [_ result]]
+ (fn-traced [db [_ result]]
    (let [expiration-dates-list (get-in result [:expirations :date])]
      (assoc db :option-expirations
             (apply merge (map #(hash-map % {}) expiration-dates-list))))))
 
 (reframe/reg-event-db
  ::failure-http-option-expirations
- (fn [db [_ request-type response]]
+ (fn-traced [db [_ request-type response]]
    (assoc db :request-fail true)))
 
 
 (reframe/reg-event-fx
  :request-option-strikes
- (fn [_ event]
+ (fn-traced [_ event]
    (let [symbol (second event)
          expiration (get event 2)]
      {:http-xhrio {:method :get
@@ -73,13 +74,13 @@
 
 (reframe/reg-event-db
  ::success-http-option-strikes
- (fn [db [_ expiration result]]
+ (fn-traced [db [_ expiration result]]
    (let [strikes (get-in result [:expirations :date])]
      (assoc-in db [:option-expirations expiration :strikes] (get-in result [:strikes :strike])))))
 
 (reframe/reg-event-db
  ::failure-http-option-strikes
- (fn [db [_ request-type response]]
+ (fn-traced [db [_ request-type response]]
    (assoc db :request-fail true)))
 
 
@@ -87,7 +88,7 @@
 
 (reframe/reg-event-fx
  :request-option-chains
- (fn [_ event]
+ (fn-traced [_ event]
    (let [symbol (second event)
          expiration (get event 2)]
      {:http-xhrio {:method :get
@@ -109,7 +110,7 @@
 
 (reframe/reg-event-db
  ::success-http-option-chains
- (fn [db [_ expiration result]]
+ (fn-traced [db [_ expiration result]]
    (let [options (get-in result [:options :option])
          symbol-map (apply merge (map #(hash-map (:symbol %) %) options))
          db-with-symbols (assoc db :symbols symbol-map)
@@ -118,7 +119,7 @@
 
 (reframe/reg-event-db
  ::failure-http-option-chains
- (fn [db [_ request-type response]]
+ (fn-traced [db [_ request-type response]]
    (assoc db :request-fail true)))
 
 
