@@ -1,0 +1,5 @@
+
+.searchbar: {
+    position: 'center';
+    backgroundColor: fade("transparent", 0.15);
+}
