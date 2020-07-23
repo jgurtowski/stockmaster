@@ -184,7 +184,7 @@
    (let [contract-size (:contract_size quote)
          strike (:strike quote)
          mark (calc-mark quote)]
-     (/ (* mark contract-size) (* strike contract-size)))))
+     (/ (* mark contract-size) (- (* strike contract-size) (* mark contract-size))))))
 
 (reframe/reg-sub
  ::return-on-risk-annualized
