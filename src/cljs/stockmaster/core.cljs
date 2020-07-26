@@ -2,13 +2,13 @@
   (:require [reagent.core :as reagent]
             [reagent.dom :as reagent-dom]
             [re-frame.core :as reframe]
-            [stockmaster.appbar :refer [app-bar]]
+            [stockmaster.appbar :refer [header-bar]]
             [stockmaster.optionstable :refer [option-table-root]]))
 
 (defn init! []
   (reagent-dom/render
    [:<>
-    [:> app-bar]
+    [:> header-bar]
     [option-table-root]]
    (.getElementById js/document "root")))
 
