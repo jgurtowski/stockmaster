@@ -49,6 +49,9 @@
 ;************************************************************************************************
 ;*************************************************************************************************
 
+(def format-float
+  #(gstring/format "%.2f" %))
+
 (defn underlying-header
   "Header for the table with the underlying symbol's trade information"
   []
@@ -73,6 +76,12 @@
         style (if itm? {:background-color "gray"} {})]
     [:> TableCell {:style style :align "center"} display-value])) 
 
+(defn strike-cell [symbol]
+  (let [[diff pdiff] @(reframe/subscribe [::diff-to-underlying symbol])
+        strike @(reframe/subscribe [::strike symbol])
+        display-value (str (format-float strike) " (" (format-float (* 100 pdiff)) ")")]
+    [:> TableCell {:align "center"} display-value]))
+
 
 (defn option-table-row [call-symbol put-symbol]
   (let [call-itm? @(reframe/subscribe [::itm? call-symbol])
@@ -81,7 +90,7 @@
      [option-table-cell call-symbol ::ask call-itm?]
      [option-table-cell call-symbol ::bid call-itm?]
      [option-table-cell call-symbol ::mark call-itm?]
-     [option-table-cell call-symbol ::strike false]
+     [strike-cell call-symbol]
      [option-table-cell put-symbol ::mark put-itm?]
      [option-table-cell put-symbol ::bid put-itm?]
      [option-table-cell put-symbol ::ask put-itm?]
@@ -96,7 +105,7 @@
         [:> TableCell {:align "center"} "Ask"]
         [:> TableCell {:align "center"} "Bid"]
         [:> TableCell {:align "center"} "Mark"]
-        [:> TableCell {:align "center"} "Strike"]
+        [:> TableCell {:align "center"} "Strike (%)"]
         [:> TableCell {:align "center"} "Mark"]
         [:> TableCell {:align "center"} "Bid"]
         [:> TableCell {:align "center"} "Ask"]
@@ -257,6 +266,15 @@
  (fn [quote _]
    (calc-mark quote)))
 
+
+(reframe/reg-sub
+  ::diff-to-underlying
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::underlying-mark])
+    (reframe/subscribe [::strike symbol])])
+ (fn [[underlying-mark symbol-strike] _]
+   (let [diff (- symbol-strike underlying-mark)]
+     [diff (/ diff underlying-mark)])))
 
 ;************************************************************************************************
 ;************************************************************************************************
