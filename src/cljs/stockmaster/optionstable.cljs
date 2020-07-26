@@ -137,12 +137,13 @@
 
 (defn option-expiration-list []
   "Top Level Option List that has the Different Expirations"
-  (let [option-expirations @(reframe/subscribe [::option-expirations])]
+  (let [option-expirations @(reframe/subscribe [::option-expirations])
+        underlying-symbol @(reframe/subscribe [::underlying-symbol-db])]
     [:> TableContainer {:component Paper}
      [:> Table {:size "small"}
       [:> TableBody
        (for [x option-expirations]
-         ^{:key x} [option-list-entry x])]]]))
+         ^{:key (str underlying-symbol x)} [option-list-entry x])]]]))
 
 
 (defn option-table-root []
