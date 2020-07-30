@@ -309,7 +309,7 @@
             {:http-xhrio {:method :get
                           :uri "https://sandbox.tradier.com/v1/markets/quotes"
                           :headers {:Accept "application/json"
-                                    :Authorization "Bearer fUMaw0yjP8h253ko8uYS6rxwFoli"}
+                                    :Authorization "Bearer gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
                           :params {:symbols symbol :greeks "true"}
                           :format (ajax/json-request-format)
                           :response-format (ajax/json-response-format {:keywords? true})
@@ -332,7 +332,7 @@
             {:http-xhrio {:method :get
                           :uri "https://sandbox.tradier.com/v1/markets/options/expirations"
                           :headers {:Accept "application/json"
-                                    :Authorization "Bearer fUMaw0yjP8h253ko8uYS6rxwFoli"}
+                                    :Authorization "Bearer gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
                           :params {:symbol (second event)}
                           :format (ajax/json-request-format)
                           :response-format (ajax/json-response-format {:keywords? true})
@@ -359,7 +359,7 @@
                   {:http-xhrio {:method :get
                                 :uri "https://sandbox.tradier.com/v1/markets/options/chains"
                                 :headers {:Accept "application/json"
-                                          :Authorization "Bearer fUMaw0yjP8h253ko8uYS6rxwFoli"}
+                                          :Authorization "Bearer gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
                                 :params {:symbol symbol
                                          :expiration expiration}
                                 :format (ajax/json-request-format)
