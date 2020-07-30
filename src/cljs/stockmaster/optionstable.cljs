@@ -1,4 +1,4 @@
-(ns stockmaster.optionstable
+ (ns stockmaster.optionstable
   (:require [reagent.core :as reagent]
             [re-frame.core :as reframe]
             [cljs-time.core :as cljs-time]
@@ -7,22 +7,7 @@
             [day8.re-frame.http-fx]
             [day8.re-frame.tracing :refer-macros [fn-traced]]
             [goog.string :as gstring]
-            [goog.string.format]
-            ["@material-ui/core/Table" :default Table]
-            ["@material-ui/core/TableContainer" :default TableContainer]
-            ["@material-ui/core/TableHead" :default TableHead]
-            ["@material-ui/core/TableRow" :default TableRow]
-            ["@material-ui/core/TableCell" :default TableCell]
-            ["@material-ui/core/TableBody" :default TableBody]
-            ["@material-ui/core/Collapse" :default Collapse]
-            ["@material-ui/core/Paper" :default Paper]
-            ["@material-ui/core/IconButton" :default IconButton]
-            ["@material-ui/icons/KeyboardArrowRight" :default KeyboardArrowRight]
-            ["@material-ui/icons/KeyboardArrowDown" :default KeyboardArrowDown]
-            ["@material-ui/core/Grid" :default Grid]
-            ["@material-ui/core/Typography" :default Typography]))
-
-
+            [goog.string.format]))
 
 
 ;************************************************************************************************
@@ -49,44 +34,64 @@
 ;************************************************************************************************
 ;*************************************************************************************************
 
+(defn search-input-change [event]
+  (if (= (. event -key) "Enter")
+    (reframe/dispatch [::init-options-table (.. event -target -value)])))
+
+(defn search-input []
+  [:div {:id "search"}
+   [:input {:type "search" :placeholder "Symbol..." :auto-correct "off" :on-key-press search-input-change}]])
+
+(defn header-bar []
+  [:div {:class "header"}
+   [:div {:id "symbol"}
+    [:span {:id "underlying-symbol"} "LADR"]
+    [:span {:id "underlying-price"} "7.65"]]
+   [:div {:id "stats"}
+    [:div {:class "stat"}
+     [:div {:class "title"} "Market Cap"]
+     [:div {:class "value"} "$100,000,000"]]
+    [:div {:class "stat"}
+     [:div {:class "title"} "Book/Share"]
+     [:div {:class "value"} "$13.29"]]
+    [:div {:class "stat"}
+     [:div {:class "title"} "Dividend Yield"]
+     [:div {:class "value"} "110%"]]
+    [:div {:class "stat"}
+     [:div {:class "title"} "Price/Book"]
+     [:div {:class "value"} "50%"]]
+    [:div {:class "stat"}
+     [:div {:class "title"} "Price/Earnings"]
+     [:div {:class "value"} "1.20x"]]]
+   [search-input]])
+
 (def format-float
   #(gstring/format "%.2f" %))
-
-(defn underlying-header
-  "Header for the table with the underlying symbol's trade information"
-  []
-  (let [underlying-symbol @(reframe/subscribe [::underlying-symbol-db])
-        underlying-mark @(reframe/subscribe [::underlying-mark])]
-        [:> Grid {:container true :spacing 3}
-         [:> Grid {:item true :xs 12}
-          [:> Typography underlying-symbol]]
-         [:> Grid {:item true :xs 3}
-          [:> Typography underlying-mark]]]))
 
 (defn option-table-cell [symbol attr itm?]
   (let [value @(reframe/subscribe [attr symbol])
         display-value (gstring/format "%.2f" value)
-        style (if itm? {:background-color "gray"} {})]
-    [:> TableCell {:style style :align "center"} display-value]))
+        style (if itm? "itm" "")]
+    [:td {:class style} display-value]))
 
 (defn return-on-risk-cell [symbol itm?]
   (let [ror (* 100 @(reframe/subscribe [::return-on-risk symbol]))
         ror-annualized (* 100 @(reframe/subscribe [::return-on-risk-annualized symbol]))
         display-value (str (gstring/format "%.2f" ror) "/" (gstring/format "%.2f" ror-annualized))
-        style (if itm? {:background-color "gray"} {})]
-    [:> TableCell {:style style :align "center"} display-value])) 
+        style (if itm? "itm" "")]
+    [:td {:class style} display-value])) 
 
 (defn strike-cell [symbol]
   (let [[diff pdiff] @(reframe/subscribe [::diff-to-underlying symbol])
         strike @(reframe/subscribe [::strike symbol])
         display-value (str (format-float strike) " (" (format-float (* 100 pdiff)) ")")]
-    [:> TableCell {:align "center"} display-value]))
+    [:td {:class "strike"} display-value]))
 
 
 (defn option-table-row [call-symbol put-symbol]
   (let [call-itm? @(reframe/subscribe [::itm? call-symbol])
         put-itm? @(reframe/subscribe [::itm? put-symbol])]
-    [:> TableRow
+    [:tr
      [option-table-cell call-symbol ::ask call-itm?]
      [option-table-cell call-symbol ::bid call-itm?]
      [option-table-cell call-symbol ::mark call-itm?]
@@ -98,19 +103,19 @@
 
 (defn option-table [expiration]
   (let [strike-containers @(reframe/subscribe [::option-expiration-strikes expiration])]
-    [:> TableContainer {:component Paper}
-     [:> Table {:size "small"}
-      [:> TableHead
-       [:> TableRow
-        [:> TableCell {:align "center"} "Ask"]
-        [:> TableCell {:align "center"} "Bid"]
-        [:> TableCell {:align "center"} "Mark"]
-        [:> TableCell {:align "center"} "Strike (%)"]
-        [:> TableCell {:align "center"} "Mark"]
-        [:> TableCell {:align "center"} "Bid"]
-        [:> TableCell {:align "center"} "Ask"]
-        [:> TableCell {:align "center"} "RoR% (p/a)"]]]
-      [:> TableBody
+    [:div {:class "table-content"}
+     [:table {:class "option-table"}
+      [:thead
+       [:tr {:class "table-header"}
+        [:td "Ask"]
+        [:td "Bid"]
+        [:td "Mark"]
+        [:td "Strike (%)"]
+        [:td "Mark"]
+        [:td "Bid"]
+        [:td "Ask"]
+        [:td "ROR% (p/a)"]]]
+      [:tbody
        (for [strike (keys strike-containers)]
          (let [{call-symbol ::call-symbol put-symbol ::put-symbol} (get strike-containers strike)]
            ^{:key strike} [option-table-row call-symbol put-symbol]))]]]))
@@ -124,32 +129,24 @@
                               (reframe/dispatch [::request-option-chains option-expiration])))]
     (fn []
       [:<>
-       [:> TableRow
-        [:> TableCell
-         [:> IconButton {:size "small" :on-click option-list-click}
-          (if (:isopen @component-state) [:> KeyboardArrowDown] [:> KeyboardArrowRight])]
-         (str option-expiration " (" days-remaining ")")]]
-       [:> TableRow
-        [:> TableCell {:style {:padding-bottom 0 :padding-top 0 } :col-span 1}
-         [:> Collapse {:in (:isopen @component-state) :timeout "auto" :unmount-on-exit true}
-          [option-table option-expiration]]]]])))
-
+       [:button {:on-click option-list-click} (str option-expiration " (" days-remaining ")")]
+       (if (:isopen @component-state) [option-table option-expiration])])))
 
 (defn option-expiration-list []
   "Top Level Option List that has the Different Expirations"
   (let [option-expirations @(reframe/subscribe [::option-expirations])
         underlying-symbol @(reframe/subscribe [::underlying-symbol-db])]
-    [:> TableContainer {:component Paper}
-     [:> Table {:size "small"}
-      [:> TableBody
+    (if (not (empty? option-expirations))
+      [:<>
        (for [x option-expirations]
-         ^{:key (str underlying-symbol x)} [option-list-entry x])]]]))
+         ^{:key (str underlying-symbol x)} [option-list-entry x])])))
 
 
 (defn option-table-root []
   [:<>
-   [underlying-header]
-   [option-expiration-list]])
+   [header-bar]
+   [:div {:class "main"}
+    [option-expiration-list]]])
 
 ;************************************************************************************************
 ;************************************************************************************************
