@@ -18,6 +18,9 @@
 ;************************************************************************************************
 ;*************************************************************************************************
 
+(def parse-tradier-date
+  (partial cljs-time-format/parse (:date cljs-time-format/formatters)))
+
 (defn days-to-expiration
   "Takes expiration as a string"
   [expiration]
@@ -36,37 +39,40 @@
 
 (defn search-input-change [event]
   (if (= (. event -key) "Enter")
-    (reframe/dispatch [::init-options-table (.. event -target -value)])))
+    (reframe/dispatch [:navigate :routes/options {:symbol (.. event -target -value)}])))
 
 (defn search-input []
   [:div {:id "search"}
    [:input {:type "search" :placeholder "Symbol..." :auto-correct "off" :on-key-press search-input-change}]])
 
-(defn header-bar []
-  [:div {:class "header"}
-   [:div {:id "symbol"}
-    [:span {:id "underlying-symbol"} "LADR"]
-    [:span {:id "underlying-price"} "7.65"]]
-   [:div {:id "stats"}
-    [:div {:class "stat"}
-     [:div {:class "title"} "Market Cap"]
-     [:div {:class "value"} "$100,000,000"]]
-    [:div {:class "stat"}
-     [:div {:class "title"} "Book/Share"]
-     [:div {:class "value"} "$13.29"]]
-    [:div {:class "stat"}
-     [:div {:class "title"} "Dividend Yield"]
-     [:div {:class "value"} "110%"]]
-    [:div {:class "stat"}
-     [:div {:class "title"} "Price/Book"]
-     [:div {:class "value"} "50%"]]
-    [:div {:class "stat"}
-     [:div {:class "title"} "Price/Earnings"]
-     [:div {:class "value"} "1.20x"]]]
-   [search-input]])
-
 (def format-float
   #(gstring/format "%.2f" %))
+
+(defn header-bar []
+  (let [underlying-symbol @(reframe/subscribe [::underlying-symbol-db])
+        underlying-mark (format-float @(reframe/subscribe [::underlying-mark]))]
+    [:div {:class "header"}
+     [:div {:id "symbol"}
+      [:span {:id "underlying-symbol"} underlying-symbol]
+      [:span {:id "underlying-price"} underlying-mark]]
+     [:div {:id "stats"}
+      [:div {:class "stat"}
+       [:div {:class "title"} "Market Cap"]
+       [:div {:class "value"} "$100,000,000"]]
+      [:div {:class "stat"}
+       [:div {:class "title"} "Book/Share"]
+       [:div {:class "value"} "$13.29"]]
+      [:div {:class "stat"}
+       [:div {:class "title"} "Dividend Yield"]
+       [:div {:class "value"} "110%"]]
+      [:div {:class "stat"}
+       [:div {:class "title"} "Price/Book"]
+       [:div {:class "value"} "50%"]]
+      [:div {:class "stat"}
+       [:div {:class "title"} "Price/Earnings"]
+       [:div {:class "value"} "1.20x"]]]
+     [search-input]]))
+
 
 (defn option-table-cell [symbol attr itm?]
   (let [value @(reframe/subscribe [attr symbol])
@@ -342,9 +348,11 @@
 (reframe/reg-event-db
  ::success-http-option-expirations
  (fn-traced [db [_ result]]
-   (let [expiration-dates-list (get-in result [:expirations :date])]
+   (let [expiration-dates-list (get-in result [:expirations :date])
+         clean-expiration-dates (filter #(<= (cljs-time/today) (parse-tradier-date %))
+                                       expiration-dates-list)]
      (assoc db ::option-expirations
-            (apply merge (map #(hash-map % {}) expiration-dates-list))))))
+            (apply merge (map #(hash-map % {}) clean-expiration-dates))))))
 
 (reframe/reg-event-db
  ::failure-http-option-expirations
@@ -359,7 +367,7 @@
                   {:http-xhrio {:method :get
                                 :uri "https://sandbox.tradier.com/v1/markets/options/chains"
                                 :headers {:Accept "application/json"
-                                          :Authorization "Bearer gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
+                                          :Authorization "Bearern gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
                                 :params {:symbol symbol
                                          :expiration expiration}
                                 :format (ajax/json-request-format)
