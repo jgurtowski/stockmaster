@@ -87,7 +87,7 @@
 (defn return-on-risk-cell [symbol itm?]
   (let [ror (* 100 @(reframe/subscribe [::return-on-risk symbol]))
         ror-annualized (* 100 @(reframe/subscribe [::return-on-risk-annualized symbol]))
-        display-value (str (gstring/format "%.2f" ror) "/" (gstring/format "%.2f" ror-annualized))
+        display-value (str ((format-float) ror) "/" ((format-float) ror-annualized))
         style (if itm? "itm" "")]
     [:td {:class style} display-value]))
 
@@ -98,12 +98,20 @@
     [:td {:class "strike"} display-value]))
 
 
+(defn covered-call-break-even-cell [symbol itm?]
+  (let [cc-be @(reframe/subscribe [::cc-be symbol])
+        cc-be-percent @(reframe/subscribe [::cc-be-pu symbol])
+        display-value (str ((format-float) cc-be) " (" ((format-float) cc-be-percent) ")")
+        style (if itm? "itm" "")]
+    [:td {:class style} display-value]))
+
 (defn option-table-row [call-symbol put-symbol]
   (let [call-itm? @(reframe/subscribe [::itm? call-symbol])
         put-itm? @(reframe/subscribe [::itm? put-symbol])]
     [:tr
      [option-table-cell call-symbol ::vega call-itm? (format-float "%.3f")]
      [option-table-cell call-symbol ::iv-mark call-itm?]
+     [covered-call-break-even-cell call-symbol call-itm?]
      [option-table-cell call-symbol ::ask call-itm?]
      [option-table-cell call-symbol ::bid call-itm?]
      [option-table-cell call-symbol ::mark call-itm?]
@@ -126,6 +134,7 @@
        [:tr {:class "table-header"}
         [:td "Vega"]
         [:td "IV% (mid)"]
+        [:td "CC-BE (%U)"]
         [:td "Ask"]
         [:td "Bid"]
         [:td "Mark"]
@@ -216,6 +225,24 @@
     (reframe/subscribe [::strike symbol])])
  (fn [[mark strike] _]
    (- strike mark)))
+
+;;Covered Call Break Even
+(reframe/reg-sub
+ ::cc-be
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::mark symbol])
+    (reframe/subscribe [::strike symbol])])
+ (fn [[mark strike] _]
+   (+ mark strike)))
+
+(reframe/reg-sub
+ ::cc-be-pu
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::cc-be symbol])
+    (reframe/subscribe [::underlying-mark])])
+ (fn [[cc-be underlying-mark] _]
+   (let [diff (- cc-be underlying-mark)]
+     (* 100 (/ diff underlying-mark)))))
 
 (reframe/reg-sub
  ::return-on-risk
