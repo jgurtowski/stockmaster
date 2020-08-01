@@ -161,14 +161,12 @@ body #root{
     flex-direction: column;
     align-items: center;
     padding: 5px;
+    white-space: nowrap;
 }
 
 
 .option-table .itm {
     background-color: #c4c4c4;
-}
-.option-table .strike {
-    /*    background-color: #F9AA33;*/
 }
 
 .paper {

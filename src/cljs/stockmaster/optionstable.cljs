@@ -1,14 +1,13 @@
- (ns stockmaster.optionstable
-  (:require [reagent.core :as reagent]
-            [re-frame.core :as reframe]
-            [cljs-time.core :as cljs-time]
-            [cljs-time.format :as cljs-time-format]
-            [ajax.core :as ajax]
-            [day8.re-frame.http-fx]
-            [day8.re-frame.tracing :refer-macros [fn-traced]]
-            [goog.string :as gstring]
-            [goog.string.format]))
-
+(ns stockmaster.optionstable
+ (:require [reagent.core :as reagent]
+           [re-frame.core :as reframe]
+           [cljs-time.core :as cljs-time]
+           [cljs-time.format :as cljs-time-format]
+           [ajax.core :as ajax]
+           [day8.re-frame.http-fx]
+           [day8.re-frame.tracing :refer-macros [fn-traced]]
+           [goog.string :as gstring]
+           [goog.string.format]))
 
 ;************************************************************************************************
 ;************************************************************************************************
@@ -45,12 +44,14 @@
   [:div {:id "search"}
    [:input {:type "search" :placeholder "Symbol..." :auto-correct "off" :on-key-press search-input-change}]])
 
-(def format-float
-  #(gstring/format "%.2f" %))
+(defn format-float
+  ([] (format-float "%.2f"))
+  ([format-string]
+   #(gstring/format format-string %)))
 
 (defn header-bar []
   (let [underlying-symbol @(reframe/subscribe [::underlying-symbol-db])
-        underlying-mark (format-float @(reframe/subscribe [::underlying-mark]))]
+        underlying-mark ((format-float) @(reframe/subscribe [::underlying-mark]))]
     [:div {:class "header"}
      [:div {:id "symbol"}
       [:span {:id "underlying-symbol"} underlying-symbol]
@@ -58,39 +59,42 @@
      [:div {:id "stats"}
       [:div {:class "stat"}
        [:div {:class "title"} "Market Cap"]
-       [:div {:class "value"} "$100,000,000"]]
+       [:div {:class "value"} "0"]]
       [:div {:class "stat"}
        [:div {:class "title"} "Book/Share"]
-       [:div {:class "value"} "$13.29"]]
+       [:div {:class "value"} "0"]]
       [:div {:class "stat"}
        [:div {:class "title"} "Dividend Yield"]
-       [:div {:class "value"} "110%"]]
+       [:div {:class "value"} "0"]]
       [:div {:class "stat"}
        [:div {:class "title"} "Price/Book"]
-       [:div {:class "value"} "50%"]]
+       [:div {:class "value"} "0"]]
       [:div {:class "stat"}
        [:div {:class "title"} "Price/Earnings"]
-       [:div {:class "value"} "1.20x"]]]
+       [:div {:class "value"} "0"]]]
      [search-input]]))
 
 
-(defn option-table-cell [symbol attr itm?]
+(defn option-table-cell
+  ([symbol attr itm?]
+   (option-table-cell symbol attr itm? (format-float)))
+  ([symbol attr itm? display-float]
   (let [value @(reframe/subscribe [attr symbol])
-        display-value (gstring/format "%.2f" value)
+        display-value (display-float value)
         style (if itm? "itm" "")]
-    [:td {:class style} display-value]))
+    [:td {:class style} display-value])))
 
 (defn return-on-risk-cell [symbol itm?]
   (let [ror (* 100 @(reframe/subscribe [::return-on-risk symbol]))
         ror-annualized (* 100 @(reframe/subscribe [::return-on-risk-annualized symbol]))
         display-value (str (gstring/format "%.2f" ror) "/" (gstring/format "%.2f" ror-annualized))
         style (if itm? "itm" "")]
-    [:td {:class style} display-value])) 
+    [:td {:class style} display-value]))
 
 (defn strike-cell [symbol]
   (let [[diff pdiff] @(reframe/subscribe [::diff-to-underlying symbol])
         strike @(reframe/subscribe [::strike symbol])
-        display-value (str (format-float strike) " (" (format-float (* 100 pdiff)) ")")]
+        display-value (str ((format-float) strike) " (" ((format-float) (* 100 pdiff)) ")")]
     [:td {:class "strike"} display-value]))
 
 
@@ -98,6 +102,8 @@
   (let [call-itm? @(reframe/subscribe [::itm? call-symbol])
         put-itm? @(reframe/subscribe [::itm? put-symbol])]
     [:tr
+     [option-table-cell call-symbol ::vega call-itm? (format-float "%.3f")]
+     [option-table-cell call-symbol ::iv-mark call-itm?]
      [option-table-cell call-symbol ::ask call-itm?]
      [option-table-cell call-symbol ::bid call-itm?]
      [option-table-cell call-symbol ::mark call-itm?]
@@ -105,7 +111,12 @@
      [option-table-cell put-symbol ::mark put-itm?]
      [option-table-cell put-symbol ::bid put-itm?]
      [option-table-cell put-symbol ::ask put-itm?]
-     [return-on-risk-cell put-symbol put-itm?]]))
+     [option-table-cell put-symbol ::basis put-itm?]
+     [return-on-risk-cell put-symbol put-itm?]
+     [option-table-cell put-symbol ::iv-mark put-itm?]
+     [option-table-cell put-symbol ::delta put-itm?]
+     [option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
+     [option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]]))
 
 (defn option-table [expiration]
   (let [strike-containers @(reframe/subscribe [::option-expiration-strikes expiration])]
@@ -113,14 +124,21 @@
      [:table {:class "option-table"}
       [:thead
        [:tr {:class "table-header"}
+        [:td "Vega"]
+        [:td "IV% (mid)"]
         [:td "Ask"]
         [:td "Bid"]
         [:td "Mark"]
-        [:td "Strike (%)"]
+        [:td {:class "strike"} "Strike (%)"]
         [:td "Mark"]
         [:td "Bid"]
         [:td "Ask"]
-        [:td "ROR% (p/a)"]]]
+        [:td "Short Basis"]
+        [:td "ROB% (p/a)"]
+        [:td "IV% (mid)"]
+        [:td "Delta"]
+        [:td "Vega"]
+        [:td "Theta"]]]
       [:tbody
        (for [strike (keys strike-containers)]
          (let [{call-symbol ::call-symbol put-symbol ::put-symbol} (get strike-containers strike)]
@@ -192,14 +210,20 @@
      ::not-an-option)))
 
 (reframe/reg-sub
+ ::basis
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::mark symbol])
+    (reframe/subscribe [::strike symbol])])
+ (fn [[mark strike] _]
+   (- strike mark)))
+
+(reframe/reg-sub
  ::return-on-risk
  (fn [[_ symbol] _]
-   (reframe/subscribe [::symbol-quote symbol]))
- (fn [quote _]
-   (let [contract-size (:contract_size quote)
-         strike (:strike quote)
-         mark (calc-mark quote)]
-     (/ (* mark contract-size) (- (* strike contract-size) (* mark contract-size))))))
+   [(reframe/subscribe [::basis symbol])
+    (reframe/subscribe [::mark symbol])])
+ (fn [[basis mark] _]
+   (/ mark basis)))
 
 (reframe/reg-sub
  ::return-on-risk-annualized
@@ -261,6 +285,40 @@
      (get-in db [::symbols underlying-symbol]))))
 
 (reframe/reg-sub
+ ::iv-mark
+ (fn [[_ symbol] _]
+   (reframe/subscribe [::greeks symbol]))
+ (fn [greeks _]
+   (* 100 (:mid_iv greeks))))
+
+(reframe/reg-sub
+ ::delta
+ (fn [[_ symbol] _]
+   (reframe/subscribe [::greeks symbol]))
+ (fn [greeks _]
+   (:delta greeks)))
+
+(reframe/reg-sub
+ ::vega
+ (fn [[_ symbol] _]
+   (reframe/subscribe [::greeks symbol]))
+ (fn [greeks _]
+   (:vega greeks)))
+
+(reframe/reg-sub
+ ::theta
+ (fn [[_ symbol] _]
+   (reframe/subscribe [::greeks symbol]))
+ (fn [greeks _]
+   (:theta greeks)))
+(reframe/reg-sub
+ ::greeks
+ (fn [[_ symbol] _]
+   (reframe/subscribe [::symbol-quote symbol]))
+ (fn [quote _]
+   (:greeks quote)))
+
+(reframe/reg-sub
  ::symbol-quote
  (fn [db [_ symbol]]
       (get-in db [::symbols symbol])))
@@ -271,7 +329,6 @@
    (reframe/subscribe [::underlying-quote]))
  (fn [quote _]
    (calc-mark quote)))
-
 
 (reframe/reg-sub
   ::diff-to-underlying
@@ -371,7 +428,8 @@
                                 :headers {:Accept "application/json"
                                           :Authorization "Bearer Lczl46XDt3ug6n8No6q4YZM0tp20"}
                                 :params {:symbol symbol
-                                         :expiration expiration}
+                                         :expiration expiration
+                                         :greeks "true"}
                                 :format (ajax/json-request-format)
                                 :response-format (ajax/json-response-format {:keywords? true})
                                 :on-success [::success-http-option-chains expiration]
