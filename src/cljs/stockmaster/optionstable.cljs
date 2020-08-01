@@ -135,7 +135,9 @@
                               (reframe/dispatch [::request-option-chains option-expiration])))]
     (fn []
       [:<>
-       [:button {:on-click option-list-click} (str option-expiration " (" days-remaining ")")]
+       [:button {:class "expiration-button"
+                 :on-click option-list-click}
+        (str option-expiration " (" days-remaining ")")]
        (if (:isopen @component-state) [option-table option-expiration])])))
 
 (defn option-expiration-list []
@@ -315,7 +317,7 @@
             {:http-xhrio {:method :get
                           :uri "https://sandbox.tradier.com/v1/markets/quotes"
                           :headers {:Accept "application/json"
-                                    :Authorization "Bearer gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
+                                    :Authorization "Bearer Lczl46XDt3ug6n8No6q4YZM0tp20"}
                           :params {:symbols symbol :greeks "true"}
                           :format (ajax/json-request-format)
                           :response-format (ajax/json-response-format {:keywords? true})
@@ -338,7 +340,7 @@
             {:http-xhrio {:method :get
                           :uri "https://sandbox.tradier.com/v1/markets/options/expirations"
                           :headers {:Accept "application/json"
-                                    :Authorization "Bearer gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
+                                    :Authorization "Bearer Lczl46XDt3ug6n8No6q4YZM0tp20"}
                           :params {:symbol (second event)}
                           :format (ajax/json-request-format)
                           :response-format (ajax/json-response-format {:keywords? true})
@@ -367,7 +369,7 @@
                   {:http-xhrio {:method :get
                                 :uri "https://sandbox.tradier.com/v1/markets/options/chains"
                                 :headers {:Accept "application/json"
-                                          :Authorization "Bearern gmbnBHbj7m1X2PSEZy7rGOgpnA26"}
+                                          :Authorization "Bearer Lczl46XDt3ug6n8No6q4YZM0tp20"}
                                 :params {:symbol symbol
                                          :expiration expiration}
                                 :format (ajax/json-request-format)

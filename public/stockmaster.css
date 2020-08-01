@@ -183,3 +183,18 @@ body #root{
     display: block;
     overflow: hidden;
 }
+
+.expiration-button{
+    border: none;
+    outline: none;
+    width: 100%;
+    text-align: left;
+    padding: 18px;
+    margin: 1px;
+    background-color: #7793a1;
+    font-size: 14px;
+}
+
+.expiration-button:hover {
+    opacity: 0.75;
+}
