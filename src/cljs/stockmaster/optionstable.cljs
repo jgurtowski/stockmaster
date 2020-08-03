@@ -74,7 +74,6 @@
        [:div {:class "value"} "0"]]]
      [search-input]]))
 
-
 (defn option-table-cell
   ([symbol attr itm?]
    (option-table-cell symbol attr itm? (format-float)))
@@ -97,11 +96,17 @@
         display-value (str ((format-float) strike) " (" ((format-float) (* 100 pdiff)) ")")]
     [:td {:class "strike"} display-value]))
 
-
 (defn covered-call-break-even-cell [symbol itm?]
   (let [cc-be @(reframe/subscribe [::cc-be symbol])
         cc-be-percent @(reframe/subscribe [::cc-be-pu symbol])
         display-value (str ((format-float) cc-be) " (" ((format-float) cc-be-percent) ")")
+        style (if itm? "itm" "")]
+    [:td {:class style} display-value]))
+
+;;how many stds?
+(defn x-std-return-cell [symbol itm? stds]
+  (let [x-std-return @(reframe/subscribe [::x-std-return-annualized symbol stds])
+        display-value (str ((format-float) (first x-std-return)) "/" ((format-float) (second x-std-return)))
         style (if itm? "itm" "")]
     [:td {:class style} display-value]))
 
@@ -122,9 +127,10 @@
      [option-table-cell put-symbol ::basis put-itm?]
      [return-on-risk-cell put-symbol put-itm?]
      [option-table-cell put-symbol ::iv-mark put-itm?]]))
-     ;[option-table-cell put-symbol ::delta put-itm?]
-     ;[option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
-     ;[option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]
+     [x-std-return-cell put-symbol put-itm? 2]
+     [option-table-cell put-symbol ::delta put-itm?]
+     [option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
+     [option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]
 
 (defn option-table [expiration]
   (let [strike-containers @(reframe/subscribe [::option-expiration-strikes expiration])]
@@ -144,10 +150,11 @@
         [:td "Ask"]
         [:td "Short Basis"]
         [:td "ROB% (p/a)"]
-        [:td "IV% (mid)"]]]
-        ;[:td "Delta"]
-        ;[:td "Vega"]
-        ;[:td "Theta"]
+        [:td "IV% (mid)"]
+        [:td "Imp Return"]
+        [:td "Delta"]
+        [:td "Vega"]
+        [:td "Theta"]]]
       [:tbody
        (for [strike (keys strike-containers)]
          (let [{call-symbol ::call-symbol put-symbol ::put-symbol} (get strike-containers strike)]
@@ -217,6 +224,30 @@
      "put" ::put
      "call" ::call
      ::not-an-option)))
+
+(defn zero-floor [num]
+  (if (> num 0) num 0))
+
+(reframe/reg-sub
+ ::x-std-return-annualized
+ (fn [[_ symbol num-stds] _]
+   [(reframe/subscribe [::strike symbol])
+    (reframe/subscribe [::iv-mark symbol])
+    (reframe/subscribe [::mark symbol])
+    (reframe/subscribe [::underlying-mark])
+    (reframe/subscribe [::expiration symbol])
+    (reframe/subscribe [::basis symbol])])
+ (fn [[strike iv mark underlying-mark expiration basis] _]
+   (let [days-remaining (days-to-expiration expiration)
+         period-adjustment (.sqrt js/Math (/ days-remaining 365.0))
+         deviation (* underlying-mark (/ iv 100.0) period-adjustment)
+         low (- underlying-mark deviation)
+         high (+ underlying-mark deviation)
+         low-return (- mark (zero-floor (- strike low)))
+         high-return (- mark (zero-floor (- strike high)))]
+     (if (= strike 60.00) (.log js/console deviation low high low-return high-return))
+     [(* 100.0 (* (/ 365.0 days-remaining) (/ low-return basis)))
+      (* 100.0 (* (/ 365.0 days-remaining) (/ high-return basis)))])))
 
 (reframe/reg-sub
  ::basis
@@ -366,7 +397,8 @@
    (let [diff (- symbol-strike underlying-mark)]
      [diff (/ diff underlying-mark)])))
 
-;************************************************************************************************
+;*********************************************
+;***************************************************
 ;************************************************************************************************
 ;************************************************************************************************
 ;*Events
