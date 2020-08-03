@@ -109,7 +109,7 @@
   (let [call-itm? @(reframe/subscribe [::itm? call-symbol])
         put-itm? @(reframe/subscribe [::itm? put-symbol])]
     [:tr
-     [option-table-cell call-symbol ::vega call-itm? (format-float "%.3f")]
+     ;[option-table-cell call-symbol ::vega call-itm? (format-float "%.3f")]
      [option-table-cell call-symbol ::iv-mark call-itm?]
      [covered-call-break-even-cell call-symbol call-itm?]
      [option-table-cell call-symbol ::ask call-itm?]
@@ -121,10 +121,10 @@
      [option-table-cell put-symbol ::ask put-itm?]
      [option-table-cell put-symbol ::basis put-itm?]
      [return-on-risk-cell put-symbol put-itm?]
-     [option-table-cell put-symbol ::iv-mark put-itm?]
-     [option-table-cell put-symbol ::delta put-itm?]
-     [option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
-     [option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]]))
+     [option-table-cell put-symbol ::iv-mark put-itm?]]))
+     ;[option-table-cell put-symbol ::delta put-itm?]
+     ;[option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
+     ;[option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]
 
 (defn option-table [expiration]
   (let [strike-containers @(reframe/subscribe [::option-expiration-strikes expiration])]
@@ -132,7 +132,7 @@
      [:table {:class "option-table"}
       [:thead
        [:tr {:class "table-header"}
-        [:td "Vega"]
+        ;[:td "Vega"]
         [:td "IV% (mid)"]
         [:td "CC-BE (%U)"]
         [:td "Ask"]
@@ -144,10 +144,10 @@
         [:td "Ask"]
         [:td "Short Basis"]
         [:td "ROB% (p/a)"]
-        [:td "IV% (mid)"]
-        [:td "Delta"]
-        [:td "Vega"]
-        [:td "Theta"]]]
+        [:td "IV% (mid)"]]]
+        ;[:td "Delta"]
+        ;[:td "Vega"]
+        ;[:td "Theta"]
       [:tbody
        (for [strike (keys strike-containers)]
          (let [{call-symbol ::call-symbol put-symbol ::put-symbol} (get strike-containers strike)]
