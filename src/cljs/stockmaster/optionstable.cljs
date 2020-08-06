@@ -106,7 +106,12 @@
 ;;how many stds?
 (defn x-std-return-cell [symbol itm? stds]
   (let [x-std-return @(reframe/subscribe [::x-std-return-annualized symbol stds])
-        display-value (str ((format-float) (first x-std-return)) "/" ((format-float) (second x-std-return)))
+        display-value (str ((format-float) (first x-std-return))
+                           "/"
+                           ((format-float) (second x-std-return))
+                           " ("
+                           ((format-float) (get x-std-return 2))
+                           ")")
         style (if itm? "itm" "")]
     [:td {:class style} display-value]))
 
@@ -151,7 +156,7 @@
         [:td "Short Basis"]
         [:td "ROB% (p/a)"]
         [:td "IV% (mid)"]
-        [:td "Imp Return"]
+        [:td "Imp Return (Exp)"]
         [:td "Delta"]
         [:td "Vega"]
         [:td "Theta"]]]
@@ -244,10 +249,11 @@
          low (- underlying-mark deviation)
          high (+ underlying-mark deviation)
          low-return (- mark (zero-floor (- strike low)))
-         high-return (- mark (zero-floor (- strike high)))]
-     (if (= strike 60.00) (.log js/console deviation low high low-return high-return))
-     [(* 100.0 (* (/ 365.0 days-remaining) (/ low-return basis)))
-      (* 100.0 (* (/ 365.0 days-remaining) (/ high-return basis)))])))
+         high-return (- mark (zero-floor (- strike high)))
+         low-rob (* 100.0 (* (/ 365.0 days-remaining) (/ low-return basis)))
+         high-rob (* 100.0 (* (/ 365.0 days-remaining) (/ high-return basis)))]
+     [low-rob high-rob (/ (+ low-rob high-rob) 2)])))
+
 
 (reframe/reg-sub
  ::basis
