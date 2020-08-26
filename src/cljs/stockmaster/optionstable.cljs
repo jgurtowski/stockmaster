@@ -132,7 +132,7 @@
      [option-table-cell put-symbol ::basis put-itm?]
      [return-on-risk-cell put-symbol put-itm?]
      [option-table-cell put-symbol ::iv-mark put-itm?]
-     [x-std-return-cell put-symbol put-itm? 2]
+     ;[x-std-return-cell put-symbol put-itm? 2]
      [option-table-cell put-symbol ::delta put-itm?]
      [option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
      [option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]]))
@@ -156,7 +156,7 @@
         [:td "Short Basis"]
         [:td "ROB% (p/a)"]
         [:td "IV% (mid)"]
-        [:td "Imp Return (Exp)"]
+        ;[:td "Imp Return (Exp)"]
         [:td "Delta"]
         [:td "Vega"]
         [:td "Theta"]]]
