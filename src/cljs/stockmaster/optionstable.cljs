@@ -130,6 +130,7 @@
      [option-table-cell put-symbol ::bid put-itm?]
      [option-table-cell put-symbol ::ask put-itm?]
      [option-table-cell put-symbol ::basis put-itm?]
+     [option-table-cell put-symbol ::put-profit put-itm?]
      [return-on-risk-cell put-symbol put-itm?]
      [option-table-cell put-symbol ::iv-mark put-itm?]
      ;[x-std-return-cell put-symbol put-itm? 2]
@@ -154,6 +155,7 @@
         [:td "Bid"]
         [:td "Ask"]
         [:td "Short Basis"]
+	[:td "Put Profit"]
         [:td "ROB% (p/a)"]
         [:td "IV% (mid)"]
         ;[:td "Imp Return (Exp)"]
@@ -299,11 +301,21 @@
      (/ (* ror 365.0) days-remaining))))
 
 (reframe/reg-sub
+ ::put-profit
+ (fn [[_ symbol target budget] _]
+     [(reframe/subscribe [::mark symbol])
+     (reframe/subscribe [::basis symbol])])
+ (fn [[mark basis] _]
+     (let [target 10.0 budget 1000.0]
+	  (* (- basis target) (/ budget mark)))))
+
+(reframe/reg-sub
  ::expiration
  (fn [[_ symbol] _]
    (reframe/subscribe [::symbol-quote symbol]))
  (fn [quote _]
    (:expiration_date quote)))
+
 
 (reframe/reg-sub
  ::option-expirations
