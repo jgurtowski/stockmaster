@@ -134,8 +134,9 @@
      [return-on-risk-cell put-symbol put-itm?]
      [option-table-cell put-symbol ::iv-mark put-itm?]
      ;[x-std-return-cell put-symbol put-itm? 2]
+     [option-table-cell put-symbol ::extrinsic put-itm?]
      [option-table-cell put-symbol ::delta put-itm?]
-     [option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
+     ;[option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
      [option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]]))
 
 (defn option-table [expiration]
@@ -159,8 +160,9 @@
         [:td "ROB% (p/a)"]
         [:td "IV% (mid)"]
         ;[:td "Imp Return (Exp)"]
+        [:td "Extrinsic"]
         [:td "Delta"]
-        [:td "Vega"]
+        ;[:td "Vega"]
         [:td "Theta"]]]
       [:tbody
        (for [strike (keys strike-containers)]
@@ -366,6 +368,17 @@
    (reframe/subscribe [::greeks symbol]))
  (fn [greeks _]
    (* 100 (:mid_iv greeks))))
+
+(reframe/reg-sub ;; only for puts right now
+ ::extrinsic
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::mark symbol])
+    (reframe/subscribe [::strike symbol])
+    (reframe/subscribe [::underlying-mark])])
+ (fn [[mark strike underlying-mark] _]
+   (if (> strike underlying-mark)
+     (- underlying-mark (- strike mark))
+     mark)))
 
 (reframe/reg-sub
  ::delta
