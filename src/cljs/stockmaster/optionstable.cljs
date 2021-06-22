@@ -44,10 +44,15 @@
   [:div {:id "search"}
    [:input {:type "search" :placeholder "Symbol..." :auto-correct "off" :on-key-press search-input-change}]])
 
+
+
 (defn format-float
   ([] (format-float "%.2f"))
   ([format-string]
-   #(gstring/format format-string %)))
+   (fn [float-to-convert]
+     (if-not (nil? float-to-convert)
+       (gstring/format format-string float-to-convert)
+       "0.00"))))
 
 (defn header-bar []
   (let [underlying-symbol @(reframe/subscribe [::underlying-symbol-db])
