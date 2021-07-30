@@ -89,9 +89,8 @@
     [:td {:class style} display-value])))
 
 (defn return-on-risk-cell [symbol itm?]
-  (let [ror (* 100 @(reframe/subscribe [::return-on-risk symbol]))
-        ror-annualized (* 100 @(reframe/subscribe [::return-on-risk-annualized symbol]))
-        display-value (str ((format-float) ror) "/" ((format-float) ror-annualized))
+  (let [eror (* 100 @(reframe/subscribe [::extrinsic-return-on-risk-annualized symbol]))
+        display-value ((format-float) eror)
         style (if itm? "itm" "")]
     [:td {:class style} display-value]))
 
@@ -162,7 +161,7 @@
         [:td "Ask"]
         [:td "Short Basis"]
 ;	[:td "Put Profit"]
-        [:td "ROB% (p/a)"]
+        [:td "Ext ROB%(a)"]
         [:td "IV% (mid)"]
         ;[:td "Imp Return (Exp)"]
         [:td "Extrinsic"]
@@ -297,6 +296,24 @@
     (reframe/subscribe [::mark symbol])])
  (fn [[basis mark] _]
    (/ mark basis)))
+
+
+(reframe/reg-sub
+ ::extrinsic-return-on-risk
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::basis symbol])
+    (reframe/subscribe [::extrinsic symbol])])
+ (fn [[basis extrinsic] _]
+   (/ extrinsic basis)))
+
+(reframe/reg-sub
+ ::extrinsic-return-on-risk-annualized
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::extrinsic-return-on-risk symbol])
+    (reframe/subscribe [::expiration symbol])])
+ (fn [[eror expiration] _]
+   (let [days-remaining (days-to-expiration expiration)]
+     (/ (* eror 365.0) days-remaining))))
 
 (reframe/reg-sub
  ::return-on-risk-annualized
