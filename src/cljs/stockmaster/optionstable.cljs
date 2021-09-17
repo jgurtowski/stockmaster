@@ -62,21 +62,22 @@
       [:span {:id "underlying-symbol"} underlying-symbol]
       [:span {:id "underlying-price"} underlying-mark]]
      [:div {:id "stats"}
-      [:div {:class "stat"}
-       [:div {:class "title"} "Market Cap"]
-       [:div {:class "value"} "0"]]
-      [:div {:class "stat"}
-       [:div {:class "title"} "Book/Share"]
-       [:div {:class "value"} "0"]]
-      [:div {:class "stat"}
-       [:div {:class "title"} "Dividend Yield"]
-       [:div {:class "value"} "0"]]
-      [:div {:class "stat"}
-       [:div {:class "title"} "Price/Book"]
-       [:div {:class "value"} "0"]]
-      [:div {:class "stat"}
-       [:div {:class "title"} "Price/Earnings"]
-       [:div {:class "value"} "0"]]]
+     ;;  [:div {:class "stat"}
+     ;;   [:div {:class "title"} "Market Cap"]
+     ;;   [:div {:class "value"} "0"]]
+     ;;  [:div {:class "stat"}
+     ;;   [:div {:class "title"} "Book/Share"]
+     ;;   [:div {:class "value"} "0"]]
+     ;;  [:div {:class "stat"}
+     ;;   [:div {:class "title"} "Dividend Yield"]
+     ;;   [:div {:class "value"} "0"]]
+     ;;  [:div {:class "stat"}
+     ;;   [:div {:class "title"} "Price/Book"]
+     ;;   [:div {:class "value"} "0"]]
+     ;;  [:div {:class "stat"}
+     ;;   [:div {:class "title"} "Price/Earnings"]
+      ;;   [:div {:class "value"} "0"]]
+      ]
      [search-input]]))
 
 (defn option-table-cell
