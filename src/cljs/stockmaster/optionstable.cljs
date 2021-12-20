@@ -108,6 +108,14 @@
         style (if itm? "itm" "")]
     [:td {:class style} display-value]))
 
+(defn extrinsic-put-cell [symbol itm?]
+  (let [extrinsic @(reframe/subscribe [::extrinsic symbol])
+        extrinsic-per-month @(reframe/subscribe [::extrinsic-per-month symbol])
+        ff (format-float)
+        display-value (str (ff extrinsic) "/" (ff extrinsic-per-month))
+        style (if itm? "itm" "")]
+    [:td {:class style} display-value]))
+
 ;;how many stds?
 (defn x-std-return-cell [symbol itm? stds]
   (let [x-std-return @(reframe/subscribe [::x-std-return-annualized symbol stds])
@@ -139,7 +147,7 @@
      [return-on-risk-cell put-symbol put-itm?]
      [option-table-cell put-symbol ::iv-mark put-itm?]
      ;[x-std-return-cell put-symbol put-itm? 2]
-     [option-table-cell put-symbol ::extrinsic put-itm?]
+     [extrinsic-put-cell put-symbol put-itm?]
      [option-table-cell put-symbol ::delta put-itm?]
      ;[option-table-cell put-symbol ::vega put-itm? (format-float "%.3f")]
      [option-table-cell put-symbol ::theta put-itm? (format-float "%.3f")]]))
@@ -165,7 +173,7 @@
         [:td "Ext ROB%(a)"]
         [:td "IV% (mid)"]
         ;[:td "Imp Return (Exp)"]
-        [:td "Extrinsic"]
+        [:td "Extrinsic/For Month"]
         [:td "Delta"]
         ;[:td "Vega"]
         [:td "Theta"]]]
@@ -324,6 +332,16 @@
  (fn [[ror expiration] _]
    (let [days-remaining (days-to-expiration expiration)]
      (/ (* ror 365.0) days-remaining))))
+
+(reframe/reg-sub
+ ::extrinsic-per-month
+ (fn [[_ symbol] _]
+   [(reframe/subscribe [::expiration symbol])
+    (reframe/subscribe [::extrinsic symbol])])
+ (fn [[expiration extrinsic] _]
+   (let [days-remaining (days-to-expiration expiration)
+         months-remaining (/ days-remaining 30)]
+     (/ extrinsic months-remaining))))
 
 (reframe/reg-sub
  ::put-profit
