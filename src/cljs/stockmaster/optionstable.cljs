@@ -173,7 +173,7 @@
         [:td "Ext ROB%(a)"]
         [:td "IV% (mid)"]
         ;[:td "Imp Return (Exp)"]
-        [:td "Extrinsic/For Month"]
+        [:td "Extrinsic/PM"]
         [:td "Delta"]
         ;[:td "Vega"]
         [:td "Theta"]]]
